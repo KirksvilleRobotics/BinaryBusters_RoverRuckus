@@ -1,14 +1,15 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "BBTeleOp")
-class BBTeleOp extends OpMode {
-    private DcMotor leftMotor;
-    private DcMotor rightMotor;
+@TeleOp(name = "BB TeleOp")
+public class BBTeleOp extends OpMode {
+    private DcMotor leftDrive;
+    private DcMotor rightDrive;
 
     private DcMotor bottomArm;
     private DcMotor topArm;
@@ -17,35 +18,38 @@ class BBTeleOp extends OpMode {
     private Servo rightClaw;
 
     public void init() {
-        leftMotor = hardwareMap.get(DcMotor.class, "leftMotor");
-        rightMotor = hardwareMap.get(DcMotor.class, "rightMotor");
+        leftDrive = hardwareMap.get(DcMotor.class, "leftDrive");
+        rightDrive = hardwareMap.get(DcMotor.class, "rightDrive");
 
-        leftMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
 
         bottomArm = hardwareMap.get(DcMotor.class, "bottomArm");
         topArm = hardwareMap.get(DcMotor.class, "topArm");
+
+        bottomArm.setDirection(DcMotorSimple.Direction.REVERSE);
 
         leftClaw = hardwareMap.get(Servo.class, "leftClaw");
         rightClaw = hardwareMap.get(Servo.class, "rightClaw");
     }
 
     public void loop() {
-        leftMotor.setPower(gamepad1.left_stick_y);
-        rightMotor.setPower(gamepad1.right_stick_y);
 
-        bottomArm.setPower(gamepad2.left_stick_y);
+        leftDrive.setPower(gamepad1.left_stick_y);
+        rightDrive.setPower(gamepad1.right_stick_y);
+
+        //bottomArm.setPower(gamepad2.left_stick_y);
         topArm.setPower(gamepad2.right_stick_y);
 
         if(gamepad2.a) {
             //close
-            leftClaw.setPosition(0);
-            rightClaw.setPosition(0);
+            leftClaw.setPosition(0.8);
+            rightClaw.setPosition(0.5);
 
             telemetry.addData("Claw", "Closed");
         } else if(gamepad2.b) {
             //open
-            leftClaw.setPosition(1);
-            rightClaw.setPosition(1);
+            leftClaw.setPosition(0.5);
+            rightClaw.setPosition(0.3);
 
             telemetry.addData("Claw", "Open");
         }

@@ -1,4 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
-public class BBLeft {
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+
+@Autonomous(name = "BB Left")
+public class BBLeft extends BBAutonomous {
+
+    @Override
+    public void runOpMode() {
+
+    }
 }
