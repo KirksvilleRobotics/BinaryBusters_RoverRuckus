@@ -11,11 +11,14 @@ public class BBTeleOp extends OpMode {
     private DcMotor leftDrive;
     private DcMotor rightDrive;
 
-    private DcMotor bottomArm;
+    private PIDMotor bottomArm;
     private DcMotor topArm;
 
     private Servo leftClaw;
     private Servo rightClaw;
+
+    private final double THRESHOLD = 0.05;
+    private boolean positionSet = false;
 
     public void init() {
         leftDrive = hardwareMap.get(DcMotor.class, "leftDrive");
@@ -23,10 +26,8 @@ public class BBTeleOp extends OpMode {
 
         leftDrive.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        bottomArm = hardwareMap.get(DcMotor.class, "bottomArm");
+        bottomArm = new PIDMotor(hardwareMap.get(DcMotor.class, "bottomArm"), 500, 500, 500, 1.0);
         topArm = hardwareMap.get(DcMotor.class, "topArm");
-
-        bottomArm.setDirection(DcMotorSimple.Direction.REVERSE);
 
         leftClaw = hardwareMap.get(Servo.class, "leftClaw");
         rightClaw = hardwareMap.get(Servo.class, "rightClaw");
@@ -37,7 +38,17 @@ public class BBTeleOp extends OpMode {
         leftDrive.setPower(gamepad1.left_stick_y);
         rightDrive.setPower(gamepad1.right_stick_y);
 
-        //bottomArm.setPower(gamepad2.left_stick_y);
+        if(Math.abs(gamepad2.left_stick_y) >= THRESHOLD) {
+            bottomArm.setPower(gamepad2.left_stick_y);
+            positionSet = false;
+        } else {
+            if(!positionSet) {
+                bottomArm.setPosition();
+                positionSet = true;
+            }
+            bottomArm.update();
+        }
+
         topArm.setPower(gamepad2.right_stick_y);
 
         if(gamepad2.a) {
