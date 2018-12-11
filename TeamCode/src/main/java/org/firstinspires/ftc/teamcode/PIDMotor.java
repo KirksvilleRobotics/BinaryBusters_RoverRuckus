@@ -14,8 +14,6 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 public class PIDMotor {
     DcMotor motor;
 
-    private int position;
-
     private final int proportion;
     private final int integral;
     private final int derivative;
