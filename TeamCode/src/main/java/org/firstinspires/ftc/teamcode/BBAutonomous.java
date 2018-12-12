@@ -121,7 +121,7 @@ public class BBAutonomous extends LinearOpMode {
         encoderDrive(leftDistance, rightDistance, 1.0);
     }
 
-    public void driveToPosition(int targetX, int targetY) {
+    public void driveToPosition(double targetX, double targetY) {
         boolean reachedPosition = false;
 
         while(!reachedPosition) {
@@ -131,7 +131,9 @@ public class BBAutonomous extends LinearOpMode {
             double robotY = position[1];
             double robotAngle = position[2];
 
-            
+            if(checkPosition(targetX, targetY, robotX, robotY))
+                reachedPosition = true;
+
 
 
         }
@@ -179,6 +181,10 @@ public class BBAutonomous extends LinearOpMode {
         double[] position = {(double)coordinates[0], (double)coordinates[1], robotAngle};
 
         return position;
+    }
+
+    public boolean checkPosition(double targetX, double targetY, double robotX, double robotY) {
+        return true;
     }
 
     private void setupVuforia() {
