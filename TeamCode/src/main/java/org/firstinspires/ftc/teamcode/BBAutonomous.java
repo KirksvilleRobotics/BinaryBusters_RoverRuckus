@@ -4,6 +4,19 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.vuforia.HINT;
+import com.vuforia.Vuforia;
+
+import org.firstinspires.ftc.robotcore.external.ClassFactory;
+import org.firstinspires.ftc.robotcore.external.matrices.OpenGLMatrix;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaLocalizer;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackable;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackableDefaultListener;
+import org.firstinspires.ftc.robotcore.external.navigation.VuforiaTrackables;
 
 public class BBAutonomous extends LinearOpMode {
 
@@ -14,6 +27,25 @@ public class BBAutonomous extends LinearOpMode {
     private Servo rightClaw;
 
     //private ColorSensor colorSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
+
+    private VuforiaLocalizer vuforiaLocalizer;
+    private VuforiaLocalizer.Parameters parameters;
+    private VuforiaTrackables visionTargets;
+
+    private VuforiaTrackable wheelsTarget;
+    private VuforiaTrackable moonTarget;
+    private VuforiaTrackable cratersTarget;
+    private VuforiaTrackable nebulaTarget;
+
+    private VuforiaTrackableDefaultListener wheelsListener;
+    private VuforiaTrackableDefaultListener moonListener;
+    private VuforiaTrackableDefaultListener cratersListener;
+    private VuforiaTrackableDefaultListener nebulaListener;
+
+    private OpenGLMatrix phoneLocation;
+
+    private static final String VUFORIA_KEY = "AV/fDE3/////AAABmZ/ALu8qqkAHj/l2PufBjRdsEamDz7lAjr+aOLtYdYX7CKw2/ylO5TdJfQqrKMyFXeOlsrO3SkXUaPNQoQfF3VjmOQTtaX/5DkZAxg/EPJnyoy1x3D9sFiLuNd1lXPIsSr0ho2KlUd98gJ1GAuoKzQQNudG8s1WD6K2S+Zw9yy5JGIKmsbsvHdKJJMgPF88bR2j202eOMNKhiO8fidcCUKU9Rb0+D4fBaj1fMCR3pTJoWZkZeG8NV54J7jr33PrjBzTK1llzETQgG5SPe4nHSUxXCviS28NU9fQqjh7GC1wXliZKgujmkBvXrdVmDfq/woTB4KZdQpkZpMcEE0gyNKh+qPUR5ZxYvF1wH4PumGtg";
+
 
     private final double COUNTS_PER_MOTOR_REV = 366;    // eg: TETRIX Motor Encoder
     private final double DRIVE_GEAR_REDUCTION = 2;     // This is < 1.0 if geared UP
@@ -89,6 +121,22 @@ public class BBAutonomous extends LinearOpMode {
         encoderDrive(leftDistance, rightDistance, 1.0);
     }
 
+    public void driveToPosition(int targetX, int targetY) {
+        boolean reachedPosition = false;
+
+        while(!reachedPosition) {
+            double[] position = getPosition();
+
+            double robotX = position[0];
+            double robotY = position[1];
+            double robotAngle = position[2];
+
+            
+
+
+        }
+    }
+
     public void openClaw() {
         leftClaw.setPosition(1);
         rightClaw.setPosition(0.3);
@@ -108,6 +156,89 @@ public class BBAutonomous extends LinearOpMode {
 
 
         return 1;
+    }
+
+    private double[] getPosition() {
+        OpenGLMatrix lastKnownLocation = createMatrix(0, 0, 0, 0, 0, 0);
+        // Ask the listener for the latest information on where the robot is
+        OpenGLMatrix latestLocation = wheelsListener.getUpdatedRobotLocation();
+
+        // The listener will sometimes return null, so we check for that to prevent errors
+        if(latestLocation == null)
+            latestLocation = moonListener.getUpdatedRobotLocation();
+        if(latestLocation == null)
+            latestLocation = cratersListener.getUpdatedRobotLocation();
+        if(latestLocation == null)
+            latestLocation = nebulaListener.getUpdatedRobotLocation();
+
+        if(latestLocation != null)
+            lastKnownLocation = latestLocation;
+
+        float[] coordinates = lastKnownLocation.getTranslation().getData();
+        double robotAngle = Orientation.getOrientation(lastKnownLocation, AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).thirdAngle;
+        double[] position = {(double)coordinates[0], (double)coordinates[1], robotAngle};
+
+        return position;
+    }
+
+    private void setupVuforia() {
+        // Setup parameters to create localizer
+        parameters = new VuforiaLocalizer.Parameters(R.id.cameraMonitorViewId); // To remove the camera view from the screen, remove the R.id.cameraMonitorViewId
+        parameters.vuforiaLicenseKey = VUFORIA_KEY;
+        parameters.cameraDirection = VuforiaLocalizer.CameraDirection.BACK;
+        parameters.useExtendedTracking = false;
+        vuforiaLocalizer = ClassFactory.createVuforiaLocalizer(parameters);
+
+        // These are the vision targets that we want to use
+        // The string needs to be the name of the appropriate .xml file in the assets folder
+        visionTargets = vuforiaLocalizer.loadTrackablesFromAsset("RoverRuckus");
+        Vuforia.setHint(HINT.HINT_MAX_SIMULTANEOUS_IMAGE_TARGETS, 4);
+
+        // Setup the target to be tracked
+        wheelsTarget = visionTargets.get(0); // 0 corresponds to the wheels target
+        wheelsTarget.setName("Wheels Target");
+        wheelsTarget.setLocation(createMatrix(-1828, 0, 0, 90, 0, 90));
+
+        moonTarget = visionTargets.get(1);
+        moonTarget.setName("Moon Target");
+        moonTarget.setLocation(createMatrix(1828, 0, 0, 90, 0, -90));
+
+        cratersTarget = visionTargets.get(2);
+        cratersTarget.setName("Craters Target");
+        cratersTarget.setLocation(createMatrix(0, -1828, 0, 90, 0, 0));
+
+        nebulaTarget = visionTargets.get(3);
+        nebulaTarget.setName("Nebula Target");
+        nebulaTarget.setLocation(createMatrix(0, 1828, 0, 90, 0, 180));
+
+        // Set phone location on robot
+        phoneLocation = createMatrix(0, 0, 0, 90, 0, 0);
+
+        // Setup listener and inform it of phone information
+        wheelsListener = (VuforiaTrackableDefaultListener) wheelsTarget.getListener();
+        wheelsListener.setPhoneInformation(phoneLocation, parameters.cameraDirection);
+
+        moonListener = (VuforiaTrackableDefaultListener) moonTarget.getListener();
+        moonListener.setPhoneInformation(phoneLocation, parameters.cameraDirection);
+
+        cratersListener = (VuforiaTrackableDefaultListener) cratersTarget.getListener();
+        cratersListener.setPhoneInformation(phoneLocation, parameters.cameraDirection);
+
+        nebulaListener = (VuforiaTrackableDefaultListener) nebulaTarget.getListener();
+        nebulaListener.setPhoneInformation(phoneLocation, parameters.cameraDirection);
+    }
+
+    // Creates a matrix for determining the locations and orientations of objects
+    // Units are millimeters for x, y, and z, and degrees for u, v, and w
+    private OpenGLMatrix createMatrix(float x, float y, float z, float u, float v, float w) {
+        return OpenGLMatrix.translation(x, y, z).
+                multiplied(Orientation.getRotationMatrix(
+                        AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES, u, v, w));
+    }
+
+    // Formats a matrix into a readable string
+    private String formatMatrix(OpenGLMatrix matrix) {
+        return matrix.formatAsTransform();
     }
 
     @Override

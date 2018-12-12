@@ -34,7 +34,7 @@ public class VuforiaTest extends LinearOpMode {
 
     private OpenGLMatrix lastKnownLocation;
     private OpenGLMatrix phoneLocation;
-//BRYAN IS A CODER!!!!!!!!!!
+
     private static final String VUFORIA_KEY = "AV/fDE3/////AAABmZ/ALu8qqkAHj/l2PufBjRdsEamDz7lAjr+aOLtYdYX7CKw2/ylO5TdJfQqrKMyFXeOlsrO3SkXUaPNQoQfF3VjmOQTtaX/5DkZAxg/EPJnyoy1x3D9sFiLuNd1lXPIsSr0ho2KlUd98gJ1GAuoKzQQNudG8s1WD6K2S+Zw9yy5JGIKmsbsvHdKJJMgPF88bR2j202eOMNKhiO8fidcCUKU9Rb0+D4fBaj1fMCR3pTJoWZkZeG8NV54J7jr33PrjBzTK1llzETQgG5SPe4nHSUxXCviS28NU9fQqjh7GC1wXliZKgujmkBvXrdVmDfq/woTB4KZdQpkZpMcEE0gyNKh+qPUR5ZxYvF1wH4PumGtg";
 
     private float robotX = 0;
@@ -104,11 +104,11 @@ public class VuforiaTest extends LinearOpMode {
         // Setup the target to be tracked
         wheelsTarget = visionTargets.get(0); // 0 corresponds to the wheels target
         wheelsTarget.setName("Wheels Target");
-        wheelsTarget.setLocation(createMatrix(0, -1828, 0, 90, 0, 90));
+        wheelsTarget.setLocation(createMatrix(-1828, 0, 0, 90, 0, 90));
 
         moonTarget = visionTargets.get(1);
         moonTarget.setName("Moon Target");
-        moonTarget.setLocation(createMatrix(0, 1828, 0, 90, 0, -90));
+        moonTarget.setLocation(createMatrix(1828, 0, 0, 90, 0, -90));
 
         cratersTarget = visionTargets.get(2);
         cratersTarget.setName("Craters Target");
