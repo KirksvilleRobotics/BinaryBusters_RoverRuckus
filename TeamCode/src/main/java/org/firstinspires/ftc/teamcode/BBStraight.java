@@ -9,6 +9,6 @@ public class BBStraight extends BBAutonomous {
         setup();
         waitForStart();
 
-        encoderDrive(40, 40, 0.5);
+        encoderDrive(40.0, 40.0, 40.0, 40.0, 0.5);
     }
 }

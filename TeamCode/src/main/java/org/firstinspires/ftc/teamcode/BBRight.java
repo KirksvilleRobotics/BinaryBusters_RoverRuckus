@@ -10,11 +10,11 @@ public class BBRight extends BBAutonomous {
         setup();
         waitForStart();
 
-        encoderDrive(61, 61);
-        openClaw();
+        encoderDrive(61.0, 61.0, 61.0, 61.0, 0.5);
+        //TODO DROP MARKER
         //turn 135 degrees
-        encoderDrive(-34, 34);
-        encoderDrive(92, 92);
+        encoderDrive(-34.0, -34.0, 34.0, 34.0);
+        encoderDrive(92.0, 92.0, 92.0, 92.0);
 
     }
 }
