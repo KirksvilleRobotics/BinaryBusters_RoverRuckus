@@ -10,11 +10,14 @@ public class BBLeft extends BBAutonomous {
         setup();
         waitForStart();
 
-        encoderDrive(36.0, 36.0, 36.0, 36.0, 0.5);
+        encoderDrive(36.0, 36.0, 36.0, 36.0, 0.75);
+        sleep(300);
         //turn 90 degrees
-        encoderDrive(-15.0, -15.0, 15.0, 15.0, 0.5);
-        encoderDrive(71.0, 71.0, 71.0, 71.0, 0.5);
-        //TODO FIGURE OUT HOW TO DROP MARKER
-        encoderDrive(-92.0, -92.0, -92.0, -92.0);
+        encoderDrive(-18.0, -18.0, 18.0, 18.0, 0.75);
+        sleep(300);
+        encoderDrive(71.0, 71.0, 71.0, 71.0, 0.75);
+        sleep(300);
+        dropHarold();
+        encoderDrive(-120.0, -120.0, -120.0, -120.0);
     }
 }

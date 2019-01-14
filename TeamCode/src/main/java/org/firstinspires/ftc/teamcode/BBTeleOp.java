@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
@@ -15,7 +16,12 @@ public class BBTeleOp extends OpMode {
     private DcMotor arm;
     private DcMotor lift;
 
+    private CRServo armExtender;
+
     private final double COUNTS_PER_DEGREE = 2;
+    private boolean suspendArm = false;
+    private double armMultiplier = -0.35;
+    private String armMessage = "low";
 
 
     @Override
@@ -46,26 +52,65 @@ public class BBTeleOp extends OpMode {
         final double v3 = r * Math.cos(angle) - rightX;
         final double v4 = r * Math.sin(angle) + rightX;
 
+        /*telemetry.addData("Front Left:", v1);
+        telemetry.addData("Front Right:", v2);
+        telemetry.addData("Back Left:", v3);
+        telemetry.addData("Back Right:", v4);*/
+
         frontLeft.setPower(v1);
         frontRight.setPower(v2);
         backLeft.setPower(v3);
         backRight.setPower(v4);
 
+        /*if(gamepad2.b) {
+            if(suspendArm) {
+                suspendArm = false;
+            } else {
+                suspendArm = true;
+            }
+        }*/
+
+        if(gamepad2.right_bumper) {
+            armMultiplier = -0.45;
+            armMessage = "high";
+        } else if(gamepad2.left_bumper) {
+            armMultiplier = -0.35;
+            armMessage = "low";
+        }
+
+        telemetry.addData("Power Multiplier:", armMessage);
+
         //Arm
         if(gamepad2.a) {
             grabBall();
-        } else {
-            arm.setPower(0.4 * gamepad2.right_stick_y);
+        } else if(Math.abs(gamepad2.right_stick_y) > 0.05) {
+            arm.setPower(armMultiplier * gamepad2.right_stick_y);
         }
+        /*} else if(suspendArm) {
+            arm.setPower(0.1);
+        } else {
+            arm.setPower(0);
+        }*/
+
+        telemetry.addData("Arm Power:", arm.getPower());
 
         lift.setPower(gamepad2.left_stick_y);
+
+        if(gamepad2.dpad_up) {
+            //extend
+            armExtender.setPower(1);
+        } else if(gamepad2.dpad_down) {
+            //retract
+            armExtender.setPower(-1);
+        }
     }
+
 
     public void grabBall() {
         try {
-            moveArm(0);
+            moveArm(-5);
             Thread.sleep(50);
-            moveArm(0);
+            moveArm(5);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }

@@ -11,6 +11,6 @@ public class BBTest extends BBAutonomous {
         telemetry.addData("Ready", "Run");
         telemetry.update();
         //encoderDrive(10, 10);
-        encoderDrive(20, 20, -20, -20,  0.5);
+        encoderDrive(10, 10, 10, 10,  0.75);
     }
 }
