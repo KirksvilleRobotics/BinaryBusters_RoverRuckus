@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -19,6 +20,11 @@ public class BBAutonomous extends LinearOpMode {
     private DcMotor arm;
 
     //private ColorSensor colorSensor = hardwareMap.get(ColorSensor.class, "colorSensor");
+
+    BNO055IMU imu;
+    Orientation lastAngles = new Orientation();
+    double globalAngle = 0.3;
+    double correction;
 
     private final double COUNTS_PER_MOTOR_REV = 240;    // eg: TETRIX Motor Encoder
     private final double DRIVE_GEAR_REDUCTION = 1;     // This is < 1.0 if geared UP
@@ -45,6 +51,17 @@ public class BBAutonomous extends LinearOpMode {
         backRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         arm = hardwareMap.get(DcMotor.class, "arm");
+
+        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
+        parameters.mode                = BNO055IMU.SensorMode.IMU;
+        parameters.angleUnit           = BNO055IMU.AngleUnit.DEGREES;
+        parameters.accelUnit           = BNO055IMU.AccelUnit.METERS_PERSEC_PERSEC;
+        parameters.loggingEnabled      = false;
+
+        imu = hardwareMap.get(BNO055IMU.class, "imu");
+        imu.initialize(parameters);
+
+        while(!isStopRequested() && !imu.isGyroCalibrated());
     }
 
     public void encoderDrive(double frontLeftDistance, double backLeftDistance, double frontRightDistance, double backRightDistance, double speed) {
@@ -72,7 +89,6 @@ public class BBAutonomous extends LinearOpMode {
         backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
 
         frontLeft.setPower(speed);
         backLeft.setPower(speed);
@@ -130,9 +146,8 @@ public class BBAutonomous extends LinearOpMode {
 
         return 1;
     }
-/*
-    private void resetAngle()
-    {
+
+    public void resetAngle() {
         lastAngles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
         globalAngle = 0;
@@ -142,9 +157,8 @@ public class BBAutonomous extends LinearOpMode {
      * Get current cumulative angle rotation from last reset.
      * @return Angle in degrees. + = left, - = right.
      */
-/*
-    private double getAngle()
-    {
+
+    public double getAngle() {
         // We experimentally determined the Z axis is the axis we want to use for heading angle.
         // We have to process the angle because the imu works in euler angles so the Z axis is
         // returned as 0 to +180 or 0 to -180 rolling back to -179 or +179 when rotation passes
@@ -152,7 +166,7 @@ public class BBAutonomous extends LinearOpMode {
 
         Orientation angles = imu.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES);
 
-        double deltaAngle = angles.firstAngle - lastAngles.firstAngle;
+        double deltaAngle = angles.thirdAngle - lastAngles.thirdAngle;
 
         if (deltaAngle < -180)
             deltaAngle += 360;
@@ -170,8 +184,7 @@ public class BBAutonomous extends LinearOpMode {
      * See if we are moving in a straight line and if not return a power correction value.
      * @return Power adjustment, + is adjust left - is adjust right.
      */
-   /* private double checkDirection()
-    {
+    public double checkDirection() {
         // The gain value determines how sensitive the correction is to direction changes.
         // You will have to experiment with your robot to get small smooth direction changes
         // to stay on a straight line.
@@ -193,8 +206,7 @@ public class BBAutonomous extends LinearOpMode {
      * Rotate left or right the number of degrees. Does not support turning more than 180 degrees.
      * @param degrees Degrees to turn, + is left - is right
      */
-    /*private void rotate(int degrees, double power)
-    {
+    public void rotate(int degrees, double power) {
         double  leftPower, rightPower;
 
         // restart imu movement tracking.
@@ -216,8 +228,10 @@ public class BBAutonomous extends LinearOpMode {
         else return;
 
         // set power to rotate.
-        leftMotor.setPower(leftPower);
-        rightMotor.setPower(rightPower);
+        frontLeft.setPower(leftPower);
+        backLeft.setPower(leftPower);
+        frontRight.setPower(rightPower);
+        backRight.setPower(rightPower);
 
         // rotate until turn is completed.
         if (degrees < 0)
@@ -231,8 +245,10 @@ public class BBAutonomous extends LinearOpMode {
             while (opModeIsActive() && getAngle() < degrees) {}
 
         // turn the motors off.
-        rightMotor.setPower(0);
-        leftMotor.setPower(0);
+        frontLeft.setPower(0);
+        backLeft.setPower(0);
+        frontRight.setPower(0);
+        backRight.setPower(0);
 
         // wait for rotation to stop.
         sleep(1000);
@@ -240,7 +256,7 @@ public class BBAutonomous extends LinearOpMode {
         // reset angle tracking on new heading.
         resetAngle();
     }
-*/
+
     @Override
     public void runOpMode() throws InterruptedException {
 

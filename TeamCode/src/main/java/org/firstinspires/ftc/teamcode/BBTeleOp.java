@@ -6,6 +6,10 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
+/* TODO
+Talk to drivers about mapping and control
+ */
+
 @TeleOp(name = "BB TeleOp")
 public class BBTeleOp extends OpMode {
     private DcMotor frontLeft;
@@ -35,17 +39,49 @@ public class BBTeleOp extends OpMode {
         backLeft.setDirection(DcMotorSimple.Direction.REVERSE);
 
         arm = hardwareMap.get(DcMotor.class, "arm");
-        arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         lift = hardwareMap.get(DcMotor.class, "lift");
+        lift.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 
     @Override
     public void loop() {
+        //Drive code
         double r = Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y);
+        double absR = Math.abs(Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y));
+        int rSign = 0;
+
+        if(Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y) < 0) {
+            rSign = -1;
+        } else if(Math.hypot(gamepad1.left_stick_x, gamepad1.left_stick_y) > 0) {
+            rSign = 1;
+        }
+
+        telemetry.addData("R:", r);
+
         double angle = Math.atan2(gamepad1.left_stick_y, gamepad1.left_stick_x) - Math.PI /4;
-        double rightX = gamepad1.right_stick_x;
+
+        double rightX = 0.0;
+        double absRightX = Math.abs(gamepad1.right_stick_x);
+        int rightXSign = 0;
+
+        if(gamepad1.right_stick_x < 0) rightXSign = -1;
+        else if(gamepad1.right_stick_x > 0) rightXSign = 1;
+        telemetry.addData("abs right x:", absRightX);
+
+        if(absRightX >= 0 && absRightX <= 0.1) {
+            rightX = 0;
+        } else if(absRightX <= 0.7) {
+            rightX = linearMap(absRightX, 0.1, 0.7, 0.1, 0.4);
+        } else {
+            telemetry.addData("Test", linearMap(absRightX, 0.7, 1.0, 0.7, 1.0));
+            rightX = linearMap(absRightX, 0.7, 1.0, 0.7, 1.0);
+        }
+
+        rightX *= rightXSign;
+        telemetry.addData("Right X:", rightX);
 
         final double v1 = r * Math.sin(angle) - rightX;
         final double v2 = r * Math.cos(angle) + rightX;
@@ -62,50 +98,57 @@ public class BBTeleOp extends OpMode {
         backLeft.setPower(v3);
         backRight.setPower(v4);
 
-        /*if(gamepad2.b) {
-            if(suspendArm) {
-                suspendArm = false;
-            } else {
-                suspendArm = true;
-            }
-        }*/
 
-        if(gamepad2.right_bumper) {
-            armMultiplier = -0.45;
-            armMessage = "high";
-        } else if(gamepad2.left_bumper) {
-            armMultiplier = -0.35;
-            armMessage = "low";
-        }
+        //Arm Code
+        double armPower = 0.0;
+        double absArmPower = Math.abs(gamepad2.right_stick_y);
+        int armSign = 0;
 
-        telemetry.addData("Power Multiplier:", armMessage);
+        if(gamepad2.right_stick_y < 0) armSign = -1;
+        else if(gamepad2.right_stick_y > 0) armSign = 1;
 
-        //Arm
-        if(gamepad2.a) {
-            grabBall();
-        } else if(Math.abs(gamepad2.right_stick_y) > 0.05) {
-            arm.setPower(armMultiplier * gamepad2.right_stick_y);
-        }
-        /*} else if(suspendArm) {
-            arm.setPower(0.1);
+        if(absArmPower >= 0.0 && absArmPower <= 0.1) {
+            armPower = 0.0;
+        } else if(absArmPower <= 0.7) {
+            armPower = linearMap(absArmPower, 0.1, 0.7, 0.0, 0.35);
         } else {
-            arm.setPower(0);
-        }*/
-
-        telemetry.addData("Arm Power:", arm.getPower());
-
-        lift.setPower(gamepad2.left_stick_y);
-
-        if(gamepad2.dpad_up) {
-            //extend
-            armExtender.setPower(1);
-        } else if(gamepad2.dpad_down) {
-            //retract
-            armExtender.setPower(-1);
+            armPower = linearMap(absArmPower, 0.7, 1.0, 0.35, 0.45);
         }
+
+        armPower *= armSign;
+
+        arm.setPower(armPower);
+        telemetry.addData("Arm power:", arm.getPower());
+
+        //Lift
+        double liftPower = 0.0;
+        double absLiftPower = Math.abs(gamepad2.left_stick_y);
+        int liftSign = 0;
+
+        if(gamepad2.left_stick_y < 0) liftSign = -1;
+        else if(gamepad2.left_stick_y > 0) liftSign = 1;
+
+        if(absLiftPower >= 0.0 && absLiftPower <= 0.1) {
+            liftPower = 0.0;
+        } else if(absLiftPower < 0.7) {
+            liftPower = linearMap(absLiftPower, 0.1, 0.7, 0.1, 0.4);
+        } else {
+            liftPower = linearMap(absLiftPower, 0.7, 1.0, 0.4, 1.0);
+        }
+
+        liftPower *= liftSign;
+
+        lift.setPower(liftPower);
+
+        telemetry.addData("Lift Power:", lift.getPower());
     }
 
+    public double linearMap(double val, double inMin, double inMax, double outMin, double outMax) {
+        return (val - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
 
+    }
+
+/*
     public void grabBall() {
         try {
             moveArm(-5);
@@ -131,5 +174,5 @@ public class BBTeleOp extends OpMode {
         arm.setPower(0);
 
         arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-    }
+    }*/
 }
